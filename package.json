@@ -1,6 +1,6 @@
 {
   "name": "wpp-external-files",
-  "version": "0.9.0",
+  "version": "0.9.4",
   "description": "WPP Import External Files",
   "main": "wpp-external-files.php",
   "scripts": {

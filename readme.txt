@@ -33,6 +33,8 @@ Because we have not had the time to complete this? and or people have not asked.
 2. Metabox Screen
 
 == Changelog ==
+= 0.9.4 =
+* Fixed bug in LEFT JOIN statement that assumed `postmeta` table wasn't already being joined.
 = 0.9.3 =
 * Added support for the tmp_file hook to cancel the process by returning FALSE
 * Added empty uninstall.php for later use
