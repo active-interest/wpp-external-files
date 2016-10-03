@@ -59,7 +59,7 @@ class Admin extends \WPP\External_Files\Base\Admin {
 
 	/**
 	 * Initialization point for the static class
-	 * 
+	 *
 	 * @return void No return value
 	 */
 	static public function init( $options = array() ) {
@@ -76,8 +76,8 @@ class Admin extends \WPP\External_Files\Base\Admin {
 		$options = static::get_options();
 		global $pagenow, $wpdb;
 		if ( is_admin() && $pagenow=='upload.php' && isset( $_GET['s'] ) ) {
-			$join .= 'LEFT JOIN ' . $wpdb->postmeta . ' ON ' . $wpdb->posts . '.ID = ' . $wpdb->postmeta . '.post_id AND ' . 
-				$wpdb->postmeta . '.meta_key = "' . $options[ 'metadata_key_external_url' ] . '" ';
+			$join .= 'LEFT JOIN ' . $wpdb->postmeta . ' wpp_external_files ON ' . $wpdb->posts . '.ID = wpp_external_files.post_id AND ' .
+				'wpp_external_files.meta_key = "' . $options[ 'metadata_key_external_url' ] . '" ';
 		}
 		return $join;
 	}
@@ -97,7 +97,7 @@ class Admin extends \WPP\External_Files\Base\Admin {
 
 	/**
 	 * WordPress action for saving the post
-	 * 
+	 *
 	 * @return void No return value
 	 */
 	static public function action_save_post( $post_id ) {
@@ -213,10 +213,10 @@ class Admin extends \WPP\External_Files\Base\Admin {
 		remove_filter('sanitize_file_name', array( $static_instance, 'filter_sanitize_file_name_16330' ) );
 	}
 
-	
+
 	/**
 	 * WordPress filter for sanitizing the file name
-	 * 
+	 *
 	 * Added becuase of WP bug http://core.trac.wordpress.org/ticket/16330
 	 *
 	 * @return void No return value
@@ -229,7 +229,7 @@ class Admin extends \WPP\External_Files\Base\Admin {
 
 	/**
 	 * WordPress action for admin_init
-	 * 
+	 *
 	 * @return void No return value
 	 */
 	static public function action_admin_init( ) {
@@ -249,37 +249,37 @@ class Admin extends \WPP\External_Files\Base\Admin {
 		);
 		add_settings_field(
 			'enable', // ID
-			'Enabled', // Title 
+			'Enabled', // Title
 			array( $static_instance, 'callback_print_enabled' ), // Callback
 			'wpp-external-files-options', // Page
-			'settings_section' // Section           
-		);		
+			'settings_section' // Section
+		);
 		add_settings_field(
 			'import_tags', // ID
-			'Included Tags', // Title 
+			'Included Tags', // Title
 			array( $static_instance, 'callback_print_import_tags' ), // Callback
 			'wpp-external-files-options', // Page
-			'settings_section' // Section           
+			'settings_section' // Section
 		);
 		add_settings_field(
 			'import_extensions', // ID
-			'File Extensions', // Title 
+			'File Extensions', // Title
 			array( $static_instance, 'callback_print_import_extensions' ), // Callback
 			'wpp-external-files-options', // Page
-			'settings_section' // Section           
+			'settings_section' // Section
 		);
 		add_settings_field(
 			'excluded_urls', // ID
-			'Excluded URLs*', // Title 
+			'Excluded URLs*', // Title
 			array( $static_instance, 'callback_print_excluded_urls' ), // Callback
 			'wpp-external-files-options', // Page
-			'settings_section' // Section           
+			'settings_section' // Section
 		);
 	}
 
 	/**
 	 * WordPress action for admin_menu
-	 * 
+	 *
 	 * @return void No return value
 	 */
 	static public function action_admin_menu( ) {
@@ -287,10 +287,10 @@ class Admin extends \WPP\External_Files\Base\Admin {
 		$options = static::get_options();
 		// This page will be under "Settings"
 		add_options_page(
-			'Settings Admin', 
-			'Import External Files', 
-			'manage_options', 
-			$options[ 'wp_option_id' ], 
+			'Settings Admin',
+			'Import External Files',
+			'manage_options',
+			$options[ 'wp_option_id' ],
 			array( $static_instance, 'callback_create_admin_page' )
 		);
 	}
@@ -301,13 +301,13 @@ class Admin extends \WPP\External_Files\Base\Admin {
 		self::$_wp_options[ $static_instance ] = get_option( $options[ 'wp_option_id' ] );
 		?>
 		<div class="wrap">
-			<h2>WPP Import External Files</h2>           
+			<h2>WPP Import External Files</h2>
 			<form method="post" action="options.php">
 			<?php
 				// This prints out all hidden setting fields
 				settings_fields( $options[ 'wp_option_id' ] );
 				do_settings_sections( 'wpp-external-files-options' );
-				submit_button(); 
+				submit_button();
 			?>
 			</form>
 		</div>
@@ -352,7 +352,7 @@ class Admin extends \WPP\External_Files\Base\Admin {
 		printf(
 			'<input type="checkbox" value="checked" name="' . $options[ 'wp_option_id' ] .'[import_tags][img]" %s /> Images <br />',
 			isset( self::$_wp_options[ $static_instance ]['import_tags']['img'] ) ? 'checked' : ''
-		);		
+		);
 		printf(
 			'<input type="checkbox" value="checked" name="' . $options[ 'wp_option_id' ] .'[import_tags][a]" %s /> Links <br />',
 			isset( self::$_wp_options[ $static_instance ]['import_tags']['a'] ) ? 'checked' : ''
