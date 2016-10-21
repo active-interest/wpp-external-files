@@ -95,6 +95,47 @@ class Admin extends \WPP\External_Files\Base\Admin {
 		return $where;
 	}
 
+	private static function build_url($parts) {
+    return (isset($parts['scheme']) ? "{$parts['scheme']}:" : '') .
+      ((isset($parts['user']) || isset($parts['host'])) ? '//' : '') .
+      (isset($parts['user']) ? "{$parts['user']}" : '') .
+      (isset($parts['pass']) ? ":{$parts['pass']}" : '') .
+      (isset($parts['user']) ? '@' : '') .
+      (isset($parts['host']) ? "{$parts['host']}" : '') .
+      (isset($parts['port']) ? ":{$parts['port']}" : '') .
+      (isset($parts['path']) ? "{$parts['path']}" : '') .
+      (isset($parts['query']) ? "?{$parts['query']}" : '') .
+      (isset($parts['fragment']) ? "#{$parts['fragment']}" : '');
+	}
+
+	private static function sideload_image($post_id, $image) {
+		if(!isset($image['filepath'])) return null;
+
+		$image_path = $image['filepath'];
+    $remote = wp_remote_get($image_path);
+    $type = wp_remote_retrieve_header($remote, 'content-type');
+    if(empty($type)) return;
+
+    $timestamp = time();
+    if(!empty($image['timestamp'])) {
+      if(is_numeric($image['timestamp'])) $timestamp = (int)$image['timestamp'];
+    }
+    $mirror = wp_upload_bits(basename($image_path), null, wp_remote_retrieve_body($remote), date('Y/m', $timestamp));
+    $attachment = array(
+      'post_title' => !empty($image['title']) ? $image['title'] : basename($image_path),
+      'post_name' => basename($image_path),
+      'post_content' => !empty($image['description']) ? $image['description'] : '',
+      'post_excerpt' => !empty($image['description']) ? $image['description'] : '',
+      'post_mime_type' => $type,
+    );
+
+    $attach_id = wp_insert_attachment($attachment, $mirror['file'], $post_id);
+    $attach_data = wp_generate_attachment_metadata($attach_id, $mirror['file']);
+    wp_update_attachment_metadata($attach_id, $attach_data);
+
+    return $attach_id;
+  }
+
 	/**
 	 * WordPress action for saving the post
 	 *
@@ -115,7 +156,7 @@ class Admin extends \WPP\External_Files\Base\Admin {
 		}
 		add_filter('sanitize_file_name', array( $static_instance, 'filter_sanitize_file_name_16330' ), 100000);
 		remove_action( 'save_post', array( $static_instance, 'action_save_post' ) );
-    	$post = get_post( $post_id );
+  	$post = get_post( $post_id );
 		$check_content = array(
 			'items' => array(
 				0 => &$post->post_content,
@@ -139,7 +180,23 @@ class Admin extends \WPP\External_Files\Base\Admin {
 						if ( empty( $wp_options[ 'import_extensions' ] ) ) {
 							continue;
 						}
-						$url_parts = parse_url( $url );
+
+						/**
+						* Filter the URL Parts, useful for site migrations and other relative redirects as well as short-circuiting with code
+						*
+						* @since 0.10.0
+						*
+						* @param string 	$url 	The raw URL being parsed
+						* @param array 		$parse_Url	The result of parse_url($url)
+						*
+						*/
+						$url_parts = apply_filters( $options[ 'wp_filter_pre_tag' ] . 'parse_url', $url, parse_url( $url ) );
+						if ( empty( $url_parts['scheme'] ) ) {
+							$url_parts[ 'scheme' ] = 'http'; // default to http scheme
+						}
+						if ( empty( $url_parts['host'] ) ) {
+							continue; // local/relative URL, skip
+						}
 						if ( empty( $url_parts['path'] ) ) {
 							continue;
 						}
@@ -161,31 +218,12 @@ class Admin extends \WPP\External_Files\Base\Admin {
 						$attachment_id = static::find_attachment_id_by_external_url( $url );
 						if ( empty( $attachment_id ) ) { // We cant find it so we need to add it
 							defined('STDIN') or set_time_limit( static::PHP_SET_TIME_LIMIT ); //If we are not running from the command line change the time limit
-							$tmp_name = apply_filters( $options[ 'wp_filter_pre_tag' ] . 'tmp_name_download_url', NULL, $url );
-							if ( $tmp_name === FALSE ) { //
-								continue;
-							} else if ( empty( $tmp_name ) ) {
-								$tmp_name = download_url( $url );
-							} else if ( ! is_readable( $tmp_name ) ) {
-								continue;
-							}
-							$file_array = array(
-								'name' => basename( $url_parts['path'] ),
-								'tmp_name' => $tmp_name,
-							);
-							// If error storing temporarily, unlink
-							if ( is_wp_error( $tmp_name ) ) {
-								@unlink( $file_array[ 'tmp_name' ] );
-								$file_array[ 'tmp_name' ] = '';
-							}
-							$attachment_id = media_handle_sideload( $file_array, $post_id, '' );
+							$attachment_id = static::sideload_image($post_id, array(
+								'filepath' => static::build_url($url_parts),
+								'timestamp' => $wp_options[ 'attachment_date_matches_post_date' ] == 'checked' ? get_the_time('U', $post ) : time(),
+							)); //media_handle_sideload( $file_array, $post_id, '' );
 							// If error storing permanently, unlink
-							if ( is_wp_error( $attachment_id ) ) {
-								@unlink( $file_array['tmp_name'] );
-								$attachment_id = NULL;
-							} else {
-								add_post_meta( $attachment_id, $options[ 'metadata_key_external_url' ], $url, TRUE ) or update_post_meta( $attachment_id, $options[ 'metadata_key_external_url' ], $url );
-							}
+							add_post_meta( $attachment_id, $options[ 'metadata_key_external_url' ], $url, TRUE ) or update_post_meta( $attachment_id, $options[ 'metadata_key_external_url' ], $url );
 						}
 						if ( empty ( $attachment_id ) ) {
 							continue; // Something went wrong, just skip
@@ -213,11 +251,10 @@ class Admin extends \WPP\External_Files\Base\Admin {
 		remove_filter('sanitize_file_name', array( $static_instance, 'filter_sanitize_file_name_16330' ) );
 	}
 
-
 	/**
 	 * WordPress filter for sanitizing the file name
 	 *
-	 * Added becuase of WP bug http://core.trac.wordpress.org/ticket/16330
+	 * Added because of WP bug http://core.trac.wordpress.org/ticket/16330
 	 *
 	 * @return void No return value
 	 */
@@ -265,6 +302,13 @@ class Admin extends \WPP\External_Files\Base\Admin {
 			'import_extensions', // ID
 			'File Extensions', // Title
 			array( $static_instance, 'callback_print_import_extensions' ), // Callback
+			'wpp-external-files-options', // Page
+			'settings_section' // Section
+		);
+		add_settings_field(
+			'attachment_date_matches_post_date', // ID
+			'Attachment Dates', // Title
+			array( $static_instance, 'callback_print_attachment_date_matches_post_date' ), // Callback
 			'wpp-external-files-options', // Page
 			'settings_section' // Section
 		);
@@ -343,6 +387,15 @@ class Admin extends \WPP\External_Files\Base\Admin {
 		printf(
 			'<input type="checkbox" value="checked" name="' . $options[ 'wp_option_id' ] .'[enabled]" %s /> Should the plugin import on save_post? <br />',
 			isset( self::$_wp_options[ $static_instance ]['enabled'] ) ? 'checked' : ''
+		);
+	}
+
+	static public function callback_print_attachment_date_matches_post_date() {
+		$static_instance = get_called_class();
+		$options = static::get_options();
+		printf(
+			'<input type="checkbox" value="checked" name="' . $options[ 'wp_option_id' ] .'[attachment_date_matches_post_date]" %s /> Should imported attachment dates match the Post date? <br />',
+			isset( self::$_wp_options[ $static_instance ]['attachment_date_matches_post_date'] ) ? 'checked' : ''
 		);
 	}
 

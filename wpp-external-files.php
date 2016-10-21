@@ -3,7 +3,7 @@
  * Plugin Name: WPP Import External Files
  * Plugin URI: https://github.com/wppoets/wpp-external-files/wiki
  * Description: Allows content from external sources to be downloaded and attached to there respected Post/Page/Custom Content. This helps to prevent the user experience from getting ruined by dead images and external 404 errors.
- * Version: 0.9.3
+ * Version: 0.10.0
  * Author: WP Poets <wppoets@gmail.com>
  * Author URI: https://github.com/wppoets/
  * License: GPLv2 (dual-licensed)
@@ -33,7 +33,7 @@
  */
 defined( 'ABSPATH' ) or die(); // We should not be loading this outside of wordpress
 
-defined( 'WPP_EXTERNAL_FILES_VERSION_NUM' )       or define( 'WPP_EXTERNAL_FILES_VERSION_NUM', '0.9.4' );
+defined( 'WPP_EXTERNAL_FILES_VERSION_NUM' )       or define( 'WPP_EXTERNAL_FILES_VERSION_NUM', '0.10.0' );
 defined( 'WPP_EXTERNAL_FILES_ASSETS_VERSION_NUM') or define( 'WPP_EXTERNAL_FILES_ASSETS_VERSION_NUM', WPP_EXTERNAL_FILES_VERSION_NUM );
 //defined( 'WPP_EXTERNAL_FILES_ASSETS_VERSION_NUM') or define( 'WPP_EXTERNAL_FILES_ASSETS_VERSION_NUM', date('YmdHis') ); // Devolopment Only
 defined( 'WPP_EXTERNAL_FILES_TEXT_DOMAIN' )       or define( 'WPP_EXTERNAL_FILES_TEXT_DOMAIN', 'wpp-external-files' );
@@ -56,3 +56,5 @@ require_once( WPP_EXTERNAL_FILES_FUNCTION_PATH . DIRECTORY_SEPARATOR . 'wpp-exte
 
 //Make the magic happen!
 \WPP\External_Files\Plugin::init();
+
+if(defined('WP_CLI') && WP_CLI) WP_CLI::add_command('external', 'WPP\External_Files\CLI_Command' );

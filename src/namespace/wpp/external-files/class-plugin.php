@@ -19,14 +19,14 @@
 defined( 'WPP_EXTERNAL_FILES_VERSION_NUM' ) or die(); //If the base plugin is not used we should not be here
 /**
  * Starting point for the plugin
- * 
+ *
  * Everything about the plugin starts here.
- * 
+ *
  * @author Michael Stutz <michaeljstutz@gmail.com>
- * 
+ *
  */
 class Plugin extends \WPP\External_Files\Base\Plugin {
-	
+
 	/** Used to set the plugins ID */
 	const ID = 'wpp-external-files';
 
@@ -38,8 +38,8 @@ class Plugin extends \WPP\External_Files\Base\Plugin {
 
 	/** Used to store the text domain */
 	const TEXT_DOMAIN = WPP_EXTERNAL_FILES_TEXT_DOMAIN;
-	
-	/** Used to enable shortcode function */	
+
+	/** Used to enable shortcode function */
 	const SHORTCODE_ENABLE = FALSE;
 
 	/** Used to store the metadata key prefix **/
@@ -50,13 +50,13 @@ class Plugin extends \WPP\External_Files\Base\Plugin {
 
 	/**
 	 * Initialization point for the static class
-	 * 
+	 *
 	 * @return void No return value
 	 */
 	static public function init( $options = array() ) {
 		parent::init( array(
-			'admin_controllers' => array( 
-				"\WPP\External_Files\Admin", 
+			'admin_controllers' => array(
+				"\WPP\External_Files\Admin",
 			),
 			'admin_controller_options' => array(
 				"\WPP\External_Files\Admin" => array(

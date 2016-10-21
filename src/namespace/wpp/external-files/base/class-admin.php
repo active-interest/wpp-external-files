@@ -48,7 +48,7 @@ abstract class Admin {
 
 	/** Used to keep the init state of the class */
 	static private $_initialized = array();
-	
+
 	/** Used to store the class options */
 	static private $_options = array();
 
@@ -57,18 +57,18 @@ abstract class Admin {
 
 	/**
 	 * Initialization point for the static class
-	 * 
+	 *
 	 * @return void No return value
 	 */
 	static public function init( $options = array() ) {
 		$static_instance = get_called_class();
-		if ( ! is_admin() || ! empty( self::$_initialized[ $static_instance ] ) ) { 
-			return; 
+		if ( ( ( defined('WP_CLI') && !WP_CLI ) && ! is_admin() ) || ! empty( self::$_initialized[ $static_instance ] ) ) {
+			return;
 		}
 		static::set_options( $options );
 		if ( static::ENABLE_SAVE_POST ) {
 			add_action( 'save_post', array( $static_instance, 'action_save_post' ) );
-		}		
+		}
 		if ( static::ENABLE_ADMIN_INIT ) {
 			add_action( 'admin_init', array( $static_instance, 'action_admin_init' ) );
 		}
@@ -77,13 +77,13 @@ abstract class Admin {
 		}
 		self::$_initialized[ $static_instance ] = true;
 	}
-	
+
 	/**
 	 * Set method for the options
-	 *  
+	 *
 	 * @param string|array $options An array containing the meta box options
 	 * @param boolean $merge Should the current options be merged in?
-	 * 
+	 *
 	 * @return void No return value
 	 */
 	static public function set_options( $options, $merge = FALSE ) {
@@ -101,7 +101,7 @@ abstract class Admin {
 
 	/*
 	 * Get method for the option array
-	 *  
+	 *
 	 * @return array Returns the option array
 	 */
 	static public function get_options() {
@@ -111,7 +111,7 @@ abstract class Admin {
 
 	/**
 	 * WordPress action for admin_init
-	 * 
+	 *
 	 * @return void No return value
 	 */
 	static public function action_admin_init( ) {
@@ -120,7 +120,7 @@ abstract class Admin {
 
 	/**
 	 * WordPress action for admin_menu
-	 * 
+	 *
 	 * @return void No return value
 	 */
 	static public function action_admin_menu( ) {
@@ -129,12 +129,12 @@ abstract class Admin {
 
 	/**
 	 * WordPress action for saving the post
-	 * 
+	 *
 	 * @return void No return value
 	 */
 	static public function action_save_post( $post_id ) {
 		if ( static::ENABLE_SAVE_POST_AUTOSAVE_CHECK && defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE )  {  // Check if is auto saving
-			return; 
+			return;
 		}
 		if ( static::ENABLE_SAVE_POST_CHECK_CAPABILITIES_CHECK ) {
 			foreach ( explode( ',', static::SAVE_POST_CHECK_CAPABILITIES ) as $capability ) {
@@ -144,12 +144,12 @@ abstract class Admin {
 			}
 		}
 		if ( static::ENABLE_SAVE_POST_REVISION_CHECK && wp_is_post_revision( $post_id ) ) {  // Check if is revision
-			return; 
+			return;
 		}
 		if ( static::ENABLE_SAVE_POST_SINGLE_RUN ) {
 			$static_instance = get_called_class();
-			if ( ! empty( self::$_save_post[ $static_instance ][ $post_id ] ) ) { 
-				return; 
+			if ( ! empty( self::$_save_post[ $static_instance ][ $post_id ] ) ) {
+				return;
 			}
 			if ( ! isset( self::$_save_post[ $static_instance ] ) ) {
 				self::$_save_post[ $static_instance ] = array();
