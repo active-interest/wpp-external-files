@@ -110,17 +110,27 @@ class Admin extends \WPP\External_Files\Base\Admin {
 
 	private static function sideload_image($post_id, $image) {
 		if(!isset($image['filepath'])) return null;
+		$options = static::get_options();
 
 		$image_path = $image['filepath'];
-    $remote = wp_remote_get($image_path);
-    $type = wp_remote_retrieve_header($remote, 'content-type');
-    if(empty($type)) return;
+    $overwrite = apply_filters( $options[ 'wp_filter_pre_tag' ] . 'overwrite', false );
 
     $timestamp = time();
     if(!empty($image['timestamp'])) {
       if(is_numeric($image['timestamp'])) $timestamp = (int)$image['timestamp'];
     }
-    $mirror = wp_upload_bits(basename($image_path), null, wp_remote_retrieve_body($remote), date('Y/m', $timestamp));
+    $upload_dir = wp_upload_dir($timestamp, false, false);
+    $file_path = implode(DIRECTORY_SEPARATOR, array($upload_dir['path'], basename($image_path)));
+
+    $mirror = null;
+    if(!file_exists($file_path)) {
+	    $remote = wp_remote_get($image_path);
+	    $type = wp_remote_retrieve_header($remote, 'content-type');
+	    if(empty($type)) return;
+    	$mirror = wp_upload_bits(basename($image_path), null, wp_remote_retrieve_body($remote), date('Y/m', $timestamp));
+    } else {
+			$mirror['file'] = $file_path;
+    }
     $attachment = array(
       'post_title' => !empty($image['title']) ? $image['title'] : basename($image_path),
       'post_name' => basename($image_path),
