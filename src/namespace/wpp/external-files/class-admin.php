@@ -113,7 +113,7 @@ class Admin extends \WPP\External_Files\Base\Admin {
 		$options = static::get_options();
 
 		$image_path = $image['filepath'];
-    $overwrite = apply_filters( $options[ 'wp_filter_pre_tag' ] . 'overwrite', false );
+    $use_existing = apply_filters( $options[ 'wp_filter_pre_tag' ] . 'use_existing', false );
 
     $timestamp = time();
     if(!empty($image['timestamp'])) {
@@ -123,7 +123,7 @@ class Admin extends \WPP\External_Files\Base\Admin {
     $file_path = implode(DIRECTORY_SEPARATOR, array($upload_dir['path'], basename($image_path)));
 
     $mirror = null;
-    if(!file_exists($file_path)) {
+    if(!$use_existing || !file_exists($file_path)) {
 	    $remote = wp_remote_get($image_path);
 	    $type = wp_remote_retrieve_header($remote, 'content-type');
 	    if(empty($type)) return;
