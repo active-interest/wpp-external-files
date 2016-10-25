@@ -101,6 +101,9 @@ class Admin extends \WPP\External_Files\Base\Admin {
         case 'debug': {
           \WP_CLI::debug($msg, $group);
         } break;
+        case 'warning': {
+          \WP_CLI::warning($msg);
+        } break;
         default: {
           \WP_CLI::line($msg, $type);
         }
@@ -195,6 +198,10 @@ class Admin extends \WPP\External_Files\Base\Admin {
     } else {
       static::log('sideload_image: downloading file, ' . $image_path, 'debug');
       $remote = wp_remote_get($image_path);
+      if(wp_remote_retrieve_response_code($remote) !== '200') {
+        static::log('sideload_image: ' . wp_remote_retrieve_response_message($remote), 'warning');
+        return false;
+      }
       $type = wp_remote_retrieve_header($remote, 'content-type');
       if(empty($type)) return false;
       $contents = wp_remote_retrieve_body($remote);
