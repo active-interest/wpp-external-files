@@ -198,8 +198,9 @@ class Admin extends \WPP\External_Files\Base\Admin {
     } else {
       static::log('sideload_image: downloading file, ' . $image_path, 'debug');
       $remote = wp_remote_get($image_path);
-      if(wp_remote_retrieve_response_code($remote) !== '200') {
-        static::log('sideload_image: ' . wp_remote_retrieve_response_message($remote), 'warning');
+      if((int)wp_remote_retrieve_response_code($remote) !== 200) {
+        static::log('sideload_image: (' . wp_remote_retrieve_response_code($remote) . '): ' . wp_remote_retrieve_response_message($remote) . ', ' . $image_path, 'warning');
+        apply_filters($options[ 'wp_filter_pre_tag' ] . 'error', $image_path, $post_id, wp_remote_retrieve_response_code($remote), wp_remote_retrieve_response_message($remote));
         return false;
       }
       $type = wp_remote_retrieve_header($remote, 'content-type');
