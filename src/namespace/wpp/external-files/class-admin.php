@@ -199,7 +199,7 @@ class Admin extends \WPP\External_Files\Base\Admin {
       static::log('sideload_image: downloading file, ' . $image_path, 'debug');
       $remote = wp_remote_get($image_path);
       if((int)wp_remote_retrieve_response_code($remote) !== 200) {
-        static::log('sideload_image: (' . wp_remote_retrieve_response_code($remote) . '): ' . wp_remote_retrieve_response_message($remote) . ', ' . $image_path, 'warning');
+        static::log('sideload_image: (' . wp_remote_retrieve_response_code($remote) . '): ' . wp_remote_retrieve_response_message($remote) . ', ' . $image_path, 'debug');
         apply_filters($options[ 'wp_filter_pre_tag' ] . 'error', $image_path, $post_id, wp_remote_retrieve_response_code($remote), wp_remote_retrieve_response_message($remote));
         return false;
       }
@@ -235,6 +235,7 @@ class Admin extends \WPP\External_Files\Base\Admin {
         $sha1 = sha1_file($mirror['file']);
         add_post_meta( $attach_id, $options[ 'metadata_key_external_url' ] . '_sha1', $sha1, TRUE ) or update_post_meta( $attach_id, $options[ 'metadata_key_external__url' ] . '_sha1', $sha1 );
       }
+      apply_filters($options['wp_filter_pre_tag'] . '_external_file', $attach_id, $image_path);
     }
     return $attach_id;
   }
@@ -293,7 +294,10 @@ class Admin extends \WPP\External_Files\Base\Admin {
             * @param array    $parse_Url  The result of parse_url($url)
             *
             */
-            $url_parts = apply_filters( $options[ 'wp_filter_pre_tag' ] . 'parse_url', $url, parse_url( $url ) );
+            $url_parts = apply_filters( $options[ 'wp_filter_pre_tag' ] . 'parse_url', parse_url( $url ), $url, $post_id );
+
+            if(empty($url_parts)) continue; // nothing to process after parsing
+
             if ( empty( $url_parts['scheme'] ) ) {
               $url_parts[ 'scheme' ] = 'http'; // default to http scheme
             }
